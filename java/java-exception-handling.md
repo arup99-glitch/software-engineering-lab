@@ -5315,3 +5315,1260 @@ HTTP 500/503
 ```
 
 and, more importantly, **when you should wrap an exception, when you should NOT wrap it, how `cause` works, and how to preserve the original stack trace while changing the abstraction.**
+
+
+Ah, understood. You want the **actual Java Exception Handling interview questions with answers**, not a prompt.
+
+I'll give you a comprehensive set from **Junior → Mid → Senior → Production level**, including tricky and code-based questions.
+
+# Java Exception Handling — Interview Questions & Answers
+
+## 🟢 Junior Level
+
+### 1. What is an exception in Java?
+
+**Answer:**
+
+An exception is an event that interrupts the normal flow of a program because something unexpected happened.
+
+Example:
+
+```java
+int a = 10;
+int b = 0;
+
+int result = a / b;
+```
+
+This causes:
+
+```text
+ArithmeticException: / by zero
+```
+
+Instead of allowing the application to fail unexpectedly, we can handle the exception.
+
+---
+
+### 2. Why do we need exception handling?
+
+**Answer:**
+
+Exception handling helps us:
+
+* Prevent unexpected application termination
+* Handle failures gracefully
+* Provide meaningful error messages
+* Separate error-handling logic from normal business logic
+* Recover when possible
+* Log problems for debugging
+
+Example:
+
+```java
+try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Cannot divide by zero");
+}
+```
+
+---
+
+### 3. What is the difference between Exception and Error?
+
+**Answer:**
+
+Both extend `Throwable`, but they represent different types of problems.
+
+```text
+Throwable
+├── Error
+└── Exception
+```
+
+**Exception** usually represents problems that an application may handle.
+
+Examples:
+
+```text
+IOException
+SQLException
+NullPointerException
+IllegalArgumentException
+```
+
+**Error** usually represents serious JVM/system-level problems.
+
+Examples:
+
+```text
+OutOfMemoryError
+StackOverflowError
+```
+
+Generally, we don't try to recover from serious `Error`s.
+
+---
+
+### 4. What is the difference between checked and unchecked exceptions?
+
+**Answer:**
+
+**Checked exceptions** are checked by the compiler.
+
+Example:
+
+```java
+IOException
+SQLException
+```
+
+You must either handle them:
+
+```java
+try {
+    // code
+} catch (IOException e) {
+}
+```
+
+or declare them:
+
+```java
+void readFile() throws IOException {
+}
+```
+
+**Unchecked exceptions** are subclasses of `RuntimeException`.
+
+Examples:
+
+```java
+NullPointerException
+IllegalArgumentException
+ArithmeticException
+```
+
+The compiler doesn't force you to catch or declare them.
+
+---
+
+### 5. What is `try-catch`?
+
+**Answer:**
+
+`try` contains code that may throw an exception.
+
+`catch` handles the exception.
+
+```java
+try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Division by zero");
+}
+```
+
+---
+
+### 6. What is `finally`?
+
+**Answer:**
+
+`finally` is generally used for cleanup code.
+
+```java
+try {
+    System.out.println("Processing");
+} catch (Exception e) {
+    System.out.println("Error");
+} finally {
+    System.out.println("Cleanup");
+}
+```
+
+The `finally` block normally executes whether an exception occurs or not.
+
+For resources such as files/database connections, modern Java generally prefers **try-with-resources**.
+
+---
+
+### 7. What is the difference between `throw` and `throws`?
+
+**Answer:**
+
+`throw` actually throws an exception.
+
+```java
+throw new IllegalArgumentException("Invalid age");
+```
+
+`throws` declares that a method may throw an exception.
+
+```java
+void readFile() throws IOException {
+}
+```
+
+Simple way to remember:
+
+```text
+throw  → actually throw
+throws → declare possibility
+```
+
+---
+
+### 8. What is exception propagation?
+
+**Answer:**
+
+If a method doesn't handle an exception, the exception moves up the call stack.
+
+Example:
+
+```java
+void methodC() {
+    int x = 10 / 0;
+}
+
+void methodB() {
+    methodC();
+}
+
+void methodA() {
+    methodB();
+}
+```
+
+Flow:
+
+```text
+methodC()
+   ↓
+exception occurs
+   ↓
+methodB()
+   ↓
+methodA()
+   ↓
+caller
+```
+
+This is called **exception propagation**.
+
+---
+
+### 9. What happens if nobody handles an exception?
+
+**Answer:**
+
+The exception propagates up the call stack.
+
+If nobody handles it, the thread terminates and Java prints the stack trace.
+
+For example:
+
+```text
+Exception in thread "main"
+java.lang.ArithmeticException: / by zero
+```
+
+---
+
+### 10. What is a stack trace?
+
+**Answer:**
+
+A stack trace tells us:
+
+* What exception occurred
+* Where it occurred
+* Which methods were called before it happened
+
+Example:
+
+```text
+java.lang.ArithmeticException: / by zero
+    at PaymentService.calculate(PaymentService.java:25)
+    at PaymentService.process(PaymentService.java:15)
+    at PaymentController.pay(PaymentController.java:10)
+```
+
+This is extremely useful when debugging production problems.
+
+---
+
+# 🟡 Mid-Level
+
+### 11. Can we have multiple `catch` blocks?
+
+**Answer:**
+
+Yes.
+
+```java
+try {
+    // code
+} catch (ArithmeticException e) {
+    // handle arithmetic
+} catch (NullPointerException e) {
+    // handle null
+} catch (Exception e) {
+    // general exception
+}
+```
+
+The order matters.
+
+More specific exceptions must come before more general exceptions.
+
+❌ Wrong:
+
+```java
+catch (Exception e) {
+}
+catch (NullPointerException e) {
+}
+```
+
+This won't compile because `Exception` already catches `NullPointerException`.
+
+---
+
+### 12. Can we have `try` without `catch`?
+
+**Answer:**
+
+Yes, if we have `finally`.
+
+```java
+try {
+    System.out.println("Hello");
+} finally {
+    System.out.println("Cleanup");
+}
+```
+
+---
+
+### 13. Can we have `catch` without `try`?
+
+**Answer:**
+
+No.
+
+A `catch` must be associated with a `try`.
+
+❌ Invalid:
+
+```java
+catch (Exception e) {
+}
+```
+
+---
+
+### 14. Can we have `try` without `catch` and without `finally`?
+
+**Answer:**
+
+No.
+
+A `try` must have at least one `catch` or a `finally`.
+
+---
+
+### 15. Can we catch `Exception`?
+
+**Answer:**
+
+Yes.
+
+```java
+try {
+    // code
+} catch (Exception e) {
+    // handle
+}
+```
+
+But blindly catching `Exception` can be a bad practice because it may hide different types of failures.
+
+Better:
+
+```java
+catch (EmployeeNotFoundException e) {
+    ...
+}
+```
+
+when you have a meaningful way to handle that specific failure.
+
+---
+
+### 16. What is a custom exception?
+
+**Answer:**
+
+A custom exception is an exception created by the application to represent a specific business or application failure.
+
+Example:
+
+```java
+public class EmployeeNotFoundException extends RuntimeException {
+
+    public EmployeeNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+Then:
+
+```java
+if (employee == null) {
+    throw new EmployeeNotFoundException("Employee not found");
+}
+```
+
+This is much clearer than:
+
+```java
+throw new RuntimeException("Employee not found");
+```
+
+---
+
+### 17. Should custom exceptions extend `Exception` or `RuntimeException`?
+
+**Answer:**
+
+It depends on the application's design and the nature of the failure.
+
+For many Spring Boot backend applications, business exceptions commonly extend `RuntimeException`.
+
+Example:
+
+```java
+public class EmployeeNotFoundException
+        extends RuntimeException {
+}
+```
+
+Why?
+
+Because we don't need to add `throws` declarations through every layer:
+
+```text
+Controller
+ ↓
+Service
+ ↓
+Repository
+```
+
+But checked exceptions can still be appropriate when the caller is genuinely expected to handle or recover from the condition.
+
+---
+
+### 18. What is exception chaining?
+
+**Answer:**
+
+Exception chaining means preserving the original exception as the cause of a new exception.
+
+Example:
+
+```java
+try {
+    paymentGateway.call();
+} catch (IOException e) {
+    throw new PaymentException(
+        "Payment gateway failed", e
+    );
+}
+```
+
+Here:
+
+```text
+PaymentException
+      ↓
+IOException
+```
+
+The original exception is preserved.
+
+You can retrieve it using:
+
+```java
+e.getCause();
+```
+
+---
+
+### 19. Why shouldn't we lose the original exception?
+
+Suppose you do this:
+
+```java
+catch (IOException e) {
+    throw new PaymentException("Payment failed");
+}
+```
+
+Now you've lost the original cause.
+
+Instead:
+
+```java
+catch (IOException e) {
+    throw new PaymentException("Payment failed", e);
+}
+```
+
+This preserves the original stack trace and helps debugging.
+
+**Senior-level point:** Don't just preserve the error message; preserve the **cause**.
+
+---
+
+### 20. What is exception wrapping?
+
+**Answer:**
+
+Exception wrapping means catching a lower-level exception and throwing a higher-level exception while preserving the original cause.
+
+Example:
+
+```text
+SQLException
+     ↓
+RepositoryException
+     ↓
+ServiceException
+     ↓
+API error response
+```
+
+This allows each layer to work with abstractions appropriate to that layer.
+
+---
+
+# 🔴 Tricky Interview Questions
+
+### 21. Does `finally` always execute?
+
+**Answer:**
+
+Normally, yes.
+
+But there are situations where it may not execute, such as:
+
+```java
+System.exit(0);
+```
+
+or catastrophic JVM termination.
+
+Example:
+
+```java
+try {
+    System.out.println("Try");
+    System.exit(0);
+} finally {
+    System.out.println("Finally");
+}
+```
+
+`finally` won't execute because the JVM is terminated.
+
+---
+
+### 22. What happens if `finally` contains `return`?
+
+Example:
+
+```java
+public int test() {
+    try {
+        return 10;
+    } finally {
+        return 20;
+    }
+}
+```
+
+Answer:
+
+```text
+20
+```
+
+The `finally` return overrides the `try` return.
+
+**Never use `return` inside `finally` in normal production code.**
+
+---
+
+### 23. What happens if `finally` throws an exception?
+
+Example:
+
+```java
+try {
+    throw new RuntimeException("Original");
+} finally {
+    throw new RuntimeException("Finally");
+}
+```
+
+The exception from `finally` can replace/suppress the original exception from the `try`.
+
+This is dangerous because the original root cause can effectively be hidden.
+
+---
+
+### 24. Can we catch `Error`?
+
+Technically yes:
+
+```java
+try {
+    // code
+} catch (OutOfMemoryError e) {
+}
+```
+
+But generally, you shouldn't treat serious JVM `Error`s like normal application exceptions.
+
+For example, trying to continue after `OutOfMemoryError` can be unsafe.
+
+---
+
+### 25. Is `NullPointerException` checked or unchecked?
+
+**Answer:**
+
+Unchecked.
+
+Because:
+
+```text
+NullPointerException
+       ↓
+RuntimeException
+       ↓
+Exception
+```
+
+---
+
+### 26. Is `IOException` checked or unchecked?
+
+**Answer:**
+
+Checked.
+
+The compiler requires you to either catch it or declare it.
+
+---
+
+### 27. Can we throw a checked exception without `throws`?
+
+**Answer:**
+
+Normally, no.
+
+For example:
+
+```java
+void test() {
+    throw new IOException();
+}
+```
+
+This won't compile unless the exception is handled or declared.
+
+```java
+void test() throws IOException {
+    throw new IOException();
+}
+```
+
+---
+
+### 28. Does `throws` mean the exception will definitely occur?
+
+**Answer:**
+
+No.
+
+```java
+void readFile() throws IOException {
+    // maybe IOException occurs
+}
+```
+
+`throws` only tells callers:
+
+> "This method may propagate this exception."
+
+It doesn't mean the exception definitely happens.
+
+---
+
+# 💻 Output-Based Questions
+
+### 29. What is the output?
+
+```java
+try {
+    System.out.println("A");
+    int x = 10 / 0;
+    System.out.println("B");
+} catch (ArithmeticException e) {
+    System.out.println("C");
+} finally {
+    System.out.println("D");
+}
+```
+
+**Answer:**
+
+```text
+A
+C
+D
+```
+
+`B` isn't printed because the exception occurs before it.
+
+---
+
+### 30. What is the output?
+
+```java
+try {
+    System.out.println("A");
+    return;
+} finally {
+    System.out.println("B");
+}
+```
+
+**Answer:**
+
+```text
+A
+B
+```
+
+`finally` executes before the method actually returns.
+
+---
+
+### 31. What happens here?
+
+```java
+try {
+    int x = 10 / 0;
+} catch (Exception e) {
+    System.out.println("Exception");
+} catch (ArithmeticException e) {
+    System.out.println("Arithmetic");
+}
+```
+
+**Answer:**
+
+It **doesn't compile**.
+
+Why?
+
+`Exception` is the parent of `ArithmeticException`.
+
+The second catch becomes unreachable.
+
+Correct:
+
+```java
+catch (ArithmeticException e) {
+}
+catch (Exception e) {
+}
+```
+
+---
+
+# 🟠 Spring Boot Interview Questions
+
+### 32. How do you handle exceptions globally in Spring Boot?
+
+**Answer:**
+
+Using:
+
+```java
+@RestControllerAdvice
+```
+
+and:
+
+```java
+@ExceptionHandler
+```
+
+Example:
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handle(
+            EmployeeNotFoundException e) {
+
+        ErrorResponse response = new ErrorResponse(
+            404,
+            "EMPLOYEE_NOT_FOUND",
+            e.getMessage(),
+            Instant.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+}
+```
+
+Now controllers don't need repetitive `try-catch` blocks.
+
+---
+
+### 33. Why use `@RestControllerAdvice`?
+
+**Answer:**
+
+It centralizes exception handling.
+
+Without it, you might have:
+
+```text
+EmployeeController → try/catch
+PayrollController  → try/catch
+DeviceController   → try/catch
+PaymentController  → try/catch
+```
+
+This creates duplicated code.
+
+With global handling:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Exception
+    ↓
+GlobalExceptionHandler
+    ↓
+HTTP Response
+```
+
+Much cleaner.
+
+---
+
+### 34. Should we return the exception stack trace to the client?
+
+**Answer:**
+
+**No.**
+
+Never expose:
+
+```text
+java.sql.SQLException...
+org.postgresql...
+database hostname...
+table names...
+stack trace...
+```
+
+to normal API clients.
+
+Instead return something safe:
+
+```json
+{
+  "status": 500,
+  "code": "INTERNAL_ERROR",
+  "message": "Something went wrong",
+  "timestamp": "2026-09-11T15:00:00Z"
+}
+```
+
+Log the technical details internally.
+
+---
+
+### 35. What HTTP status should be returned for "Employee Not Found"?
+
+Usually:
+
+```text
+404 NOT_FOUND
+```
+
+Example:
+
+```json
+{
+  "status": 404,
+  "code": "EMPLOYEE_NOT_FOUND",
+  "message": "Employee not found"
+}
+```
+
+---
+
+### 36. What HTTP status should be returned for duplicate employee/email?
+
+Usually:
+
+```text
+409 CONFLICT
+```
+
+Because the requested operation conflicts with the existing state.
+
+---
+
+### 37. What HTTP status for validation failure?
+
+Commonly:
+
+```text
+400 BAD_REQUEST
+```
+
+Example:
+
+```json
+{
+  "status": 400,
+  "code": "VALIDATION_FAILED",
+  "message": "Email must be valid"
+}
+```
+
+---
+
+# 🔥 Senior-Level Questions
+
+### 38. Where should an exception be handled?
+
+**Answer:**
+
+Handle it at the layer that has enough context to make a meaningful decision.
+
+For example:
+
+```text
+Repository
+    ↓
+detect database failure
+
+Service
+    ↓
+translate/classify business meaning
+
+Controller boundary
+    ↓
+convert to HTTP response
+```
+
+Don't catch an exception just because you can.
+
+Ask:
+
+> **Can this layer actually recover or add meaningful context?**
+
+If not, propagate it.
+
+---
+
+### 39. Why is this bad?
+
+```java
+try {
+    service.process();
+} catch (Exception e) {
+}
+```
+
+**Answer:**
+
+This is called **swallowing the exception**.
+
+Problems:
+
+* Error disappears
+* Debugging becomes difficult
+* Application may continue in an invalid state
+* Monitoring won't detect the failure
+* Root cause is lost
+
+At minimum, handle it meaningfully or propagate it.
+
+---
+
+### 40. Is this good?
+
+```java
+try {
+    service.process();
+} catch (Exception e) {
+    throw e;
+}
+```
+
+Usually **no**.
+
+It adds no value.
+
+If you aren't adding context, translating the exception, recovering, or performing some meaningful action, simply let it propagate.
+
+---
+
+### 41. Should every exception be logged?
+
+**Answer:**
+
+No.
+
+One common mistake is logging the same exception at every layer:
+
+```text
+Repository → ERROR
+Service    → ERROR
+Controller → ERROR
+GlobalHandler → ERROR
+```
+
+One failure can produce four identical logs.
+
+A better strategy is to log at the appropriate boundary, with enough context.
+
+For example:
+
+```java
+log.error(
+    "Payment processing failed for orderId={}",
+    orderId,
+    e
+);
+```
+
+---
+
+### 42. Should exceptions be used for normal program flow?
+
+**Answer:**
+
+Generally, no.
+
+Bad:
+
+```java
+try {
+    return list.get(0);
+} catch (IndexOutOfBoundsException e) {
+    return null;
+}
+```
+
+Better:
+
+```java
+if (list.isEmpty()) {
+    return null;
+}
+
+return list.get(0);
+```
+
+Exceptions represent exceptional situations, not normal branching.
+
+---
+
+### 43. Are exceptions expensive?
+
+**Answer:**
+
+Creating and throwing exceptions can be relatively expensive, particularly because stack traces may need to be captured.
+
+Therefore, don't use exceptions as a normal high-frequency control-flow mechanism.
+
+But don't avoid exceptions when they are the correct way to represent a failure.
+
+The senior answer is:
+
+> **Use exceptions for exceptional failures, not normal business branching.**
+
+---
+
+# 🚀 Production Scenario Questions
+
+### 44. Your API suddenly returns 500 errors in production. What do you check?
+
+A strong senior answer:
+
+1. Check application logs
+2. Find the root exception
+3. Check stack trace
+4. Check error rate/time window
+5. Check recent deployments
+6. Check database health
+7. Check external dependencies
+8. Check CPU/memory
+9. Check network/timeouts
+10. Check whether the problem affects all requests or specific requests
+11. Check metrics/traces
+12. Correlate failures using request/correlation IDs
+
+Don't immediately say:
+
+> "Add a try-catch."
+
+The first job is to **identify the failure and its scope**.
+
+---
+
+### 45. It works locally but fails in production. What could cause it?
+
+Possible causes:
+
+* Different environment variables
+* Different database
+* Different database schema
+* Missing configuration
+* Different Java version
+* Different dependency version
+* Network/firewall issues
+* Authentication/credentials
+* Cloud permissions
+* Different timezone
+* Different filesystem behavior
+* Production traffic/concurrency
+* External service unavailable
+
+Exception handling helps report the failure, but you still need to investigate the underlying cause.
+
+---
+
+### 46. Your payment API sometimes times out. What would you do?
+
+A senior-level approach might include:
+
+```text
+Payment Service
+      ↓
+Timeout
+      ↓
+Classify as transient failure
+      ↓
+Retry carefully if operation is safe
+      ↓
+Idempotency protection
+      ↓
+Circuit breaker if dependency remains unhealthy
+      ↓
+Return appropriate response
+```
+
+You must be careful with retries for payments because blindly retrying can potentially create duplicate operations.
+
+---
+
+### 47. Your database is unavailable. Should you catch the exception?
+
+Not simply to hide it.
+
+For example:
+
+```java
+catch (SQLException e) {
+    return null;
+}
+```
+
+is dangerous.
+
+Instead:
+
+```text
+Database failure
+      ↓
+Translate/classify
+      ↓
+Log with context
+      ↓
+Propagate
+      ↓
+Global handler
+      ↓
+Appropriate API response
+```
+
+Depending on the architecture, the API might return something like:
+
+```text
+503 SERVICE_UNAVAILABLE
+```
+
+if the service genuinely cannot fulfill the request because a dependency is unavailable.
+
+---
+
+# 🧠 One Very Important Senior Mental Model
+
+When you encounter an exception, don't immediately ask:
+
+> **"Where can I catch this?"**
+
+Ask:
+
+> **"What failed?"**
+
+Then:
+
+> **"Is this expected or unexpected?"**
+
+Then:
+
+> **"Can this layer recover?"**
+
+Then:
+
+> **"Should I translate it?"**
+
+Then:
+
+> **"Should I retry it?"**
+
+Then:
+
+> **"What should the client see?"**
+
+Then:
+
+> **"What should be logged/monitored?"**
+
+That thinking is much closer to **senior/production-level exception handling** than simply knowing `try-catch`.
